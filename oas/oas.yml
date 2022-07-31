@@ -1,0 +1,68 @@
+openapi: "3.0.0"
+info:
+  title: zemoga_test Service
+  description: Base project for the creation of microservices.
+  version: 1.0.0
+  contact:
+    name: PrettyTechnical
+    url: https://prettytechnical.io/contact/
+
+servers:
+  - url: "http://localhost:18080"
+    description: Local Environment
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health endpoint shows whether server and dependencies are running ok
+      responses:
+        "200":
+          description: Health Response
+          headers:
+            Api-Version:
+              schema:
+                type: string
+                example: c4f3d00d
+              description: API Version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    Error:
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+    ErrorResponse:
+      properties:
+        error:
+          $ref: "#/components/schemas/Error"
+    HealthData:
+      properties:
+        name:
+          type: string
+        alive:
+          type: boolean
+    HealthResponse:
+      properties:
+        data:
+          properties:
+            services:
+              type: array
+              items:
+                $ref: "#/components/schemas/HealthData"
+
+tags:
+  - name: Health
+    description: Health Endpoint

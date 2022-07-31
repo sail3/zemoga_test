@@ -1,0 +1,14 @@
+syntax = "proto3";
+package health;
+option go_package = "health/;health";
+
+message GetHealthStatusRequest {}
+
+message GetHealthStatusResponse {
+  string name = 1;
+	bool alive = 2;
+}
+
+service HealthService {
+  rpc GetHealthStatus(GetHealthStatusRequest) returns (GetHealthStatusResponse) {};
+}

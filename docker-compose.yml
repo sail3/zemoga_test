@@ -1,0 +1,31 @@
+version: "3.7"
+
+services:
+    service:
+        image: zemoga_test-service
+        env_file: .env
+        build:
+            target: builder
+            context: .
+        ports:
+            - 18080:8080
+            - 19090:9090
+        volumes:
+            - ./:/go/src/github.com/sail3/zemoga_test
+            - swagger:/go/src/github.com/sail3/zemoga_test/swagger
+            - ./oas/oas.yml:/go/src/github.com/sail3/zemoga_test/swagger/swagger.yml
+        command: gowatch -p ./cmd/api
+        depends_on:
+            - swagger
+        networks: 
+            - default
+    swagger:
+        image: swaggerapi/swagger-ui:v3.23.10
+        environment:
+            URL: /swagger/swagger.yml
+        volumes:
+            - swagger:/usr/share/nginx/html
+
+volumes:
+    # swagger named volume will be shared between service and swagger. So we can have a local swagger running
+    swagger: null

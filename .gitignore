@@ -1,0 +1,8 @@
+.idea/
+.vscode/
+/swagger
+.env
+zemoga_test
+docker-compose-local.yml
+
+.DS_Store
