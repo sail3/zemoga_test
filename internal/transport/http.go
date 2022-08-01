@@ -29,6 +29,9 @@ func NewHTTPRouter(healthSvc health.Service, portfolioSvc portfolio.Handler, log
 	r.Get("/health", hh.Health)
 
 	r.Get("/profile/{id}", portfolioSvc.GetProfileHandler)
+	r.Get("/profile", portfolioSvc.ListProfileHandler)
+	r.Get("/profile/{id}/tweet", portfolioSvc.ListTweetsHandler)
+	r.Patch("/profile/{id}", portfolioSvc.UpdateProfileHandler)
 	r.Handle("/swagger/*", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./swagger"))))
 
 	return r
