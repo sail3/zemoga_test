@@ -9,12 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/sail3/zemoga_test/internal/logger"
 	"github.com/sail3/zemoga_test/pkg/health"
+	"github.com/sail3/zemoga_test/pkg/portfolio"
 )
 
 const correlationIDHeader = "X-Correlation-ID"
 
 // NewHTTPRouter initializes the router using the services as dependencies to build the handlers.
-func NewHTTPRouter(healthSvc health.Service, log logger.Logger) http.Handler {
+func NewHTTPRouter(healthSvc health.Service, portfolioSvc portfolio.Handler, log logger.Logger) http.Handler {
 	hh := health.Handler{
 		Service: healthSvc,
 	}
@@ -27,6 +28,7 @@ func NewHTTPRouter(healthSvc health.Service, log logger.Logger) http.Handler {
 	// Health.
 	r.Get("/health", hh.Health)
 
+	r.Get("/profile/{id}", portfolioSvc.GetProfileHandler)
 	r.Handle("/swagger/*", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./swagger"))))
 
 	return r

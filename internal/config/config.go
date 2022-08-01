@@ -17,15 +17,21 @@ const (
 	postgresPass    = "POSTGRES_PASSWORD"
 	postgresDB      = "POSTGRES_DATABASE"
 	postgresTimeOUT = "POSTGRES_TIMEOUT"
+	twitterID       = "TWITTER_ID"
+	twitterSecret   = "TWITTER_SECRET"
+	twitterTokenURL = "TWITTER_TOKEN_URL"
 )
 
 // Config contains the service configuration variables.
 type Config struct {
-	Port          string
-	GRPCPort      string
-	Debug         bool
-	DbPostgresUrl string
-	DbTimeOUT     int
+	Port            string
+	GRPCPort        string
+	Debug           bool
+	DbPostgresUrl   string
+	DbTimeOUT       int
+	TwitterID       string
+	TwitterSecret   string
+	TwitterTokenURL string
 }
 
 // New returns a structure with the service configuration variables.
@@ -39,10 +45,13 @@ func New() Config {
 		os.Getenv(postgresDB))
 
 	return Config{
-		Port:          GetEnvString(port, "8080"),
-		Debug:         GetEnvBool(debugMode, false),
-		DbPostgresUrl: postgresURL,
-		DbTimeOUT:     GetEnvInt(postgresTimeOUT, 15),
+		Port:            GetEnvString(port, "8080"),
+		Debug:           GetEnvBool(debugMode, false),
+		DbPostgresUrl:   postgresURL,
+		DbTimeOUT:       GetEnvInt(postgresTimeOUT, 15),
+		TwitterID:       GetEnvString(twitterID, ""),
+		TwitterSecret:   GetEnvString(twitterSecret, ""),
+		TwitterTokenURL: GetEnvString(twitterTokenURL, ""),
 	}
 }
 

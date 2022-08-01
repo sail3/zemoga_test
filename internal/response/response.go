@@ -3,6 +3,8 @@ package response
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/sail3/zemoga_test/internal/config"
@@ -39,6 +41,17 @@ func RespondWithError(w http.ResponseWriter, err error) error {
 	w.Header().Set(versionHeader, config.GetVersion())
 	w.WriteHeader(statusCodeFromError(err))
 	return json.NewEncoder(w).Encode(newBaseResponseWithError(viewModelFromError(err)))
+}
+
+func RespondWithHTML(w http.ResponseWriter, templateName string, data interface{}) error {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(200)
+
+	tmp := fmt.Sprintf("public/%s.tmpl", templateName)
+	var temp *template.Template
+	temp = template.Must(template.ParseGlob(tmp))
+
+	return temp.Execute(w, data)
 }
 
 func statusCodeFromError(err error) int {

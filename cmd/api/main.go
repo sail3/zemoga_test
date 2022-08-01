@@ -2,19 +2,24 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 
 	"github.com/sail3/zemoga_test/internal/config"
+	"github.com/sail3/zemoga_test/internal/db/postgres"
 	"github.com/sail3/zemoga_test/internal/transport"
 	"github.com/sail3/zemoga_test/pkg/health"
+	"github.com/sail3/zemoga_test/pkg/portfolio"
+	"github.com/sail3/zemoga_test/pkg/twitter"
 
 	"github.com/sail3/zemoga_test/internal/logger"
 )
@@ -26,11 +31,29 @@ func main() {
 
 	l := logger.New("zemoga_test service", conf.Debug)
 
+	err := doMigrate(conf.DbPostgresUrl)
+	if err != nil {
+		l.With("transport", "http").Error(err)
+		os.Exit(1)
+	}
+
+	db := postgres.NewPostgresClient(conf.DbPostgresUrl)
+	err = db.Ping()
+	if err != nil {
+		l.Error(err)
+		os.Exit(1)
+	}
 	hSvc := health.NewService(
 		l.With("scope", "health service"),
 	)
+	pRepo := portfolio.NewRepository(db.DB, l)
+	tSvc := twitter.NewService(conf)
 
-	httpTransportRouter := transport.NewHTTPRouter(hSvc, l)
+	pSvc := portfolio.NewService(pRepo, tSvc, l)
+
+	pHand := portfolio.NewHandler(pSvc, l)
+
+	httpTransportRouter := transport.NewHTTPRouter(hSvc, pHand, l)
 
 	srv := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%s", conf.Port),
@@ -72,4 +95,20 @@ func main() {
 	// to finalize based on context cancellation.
 	l.Info("Service gracefully shut down")
 	os.Exit(0)
+}
+
+func doMigrate(databaseURL string) error {
+	m, err := migrate.New(
+		migrationsRootFolder,
+		databaseURL,
+	)
+	if err != nil {
+		return err
+	}
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+
+	return nil
 }
