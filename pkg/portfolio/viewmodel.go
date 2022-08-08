@@ -3,7 +3,7 @@ package portfolio
 import "github.com/sail3/zemoga_test/pkg/twitter"
 
 type GetProfileRequest struct {
-	ID int `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 }
 
 type GetProfileResponse struct {

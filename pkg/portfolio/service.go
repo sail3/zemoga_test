@@ -10,8 +10,8 @@ import (
 type Service interface {
 	GetProfile(ctx context.Context, p GetProfileRequest) (GetProfileResponse, error)
 	ListProfile(ctx context.Context) ([]ProfileResponse, error)
-	GetTweetList(ctx context.Context, userID, quantity int) ([]TweetResponse, error)
-	UpdateProfile(ctx context.Context, userID int, pr ProfileRequest) (ProfileResponse, error)
+	GetTweetList(ctx context.Context, userID string, quantity int) ([]TweetResponse, error)
+	UpdateProfile(ctx context.Context, userID string, pr ProfileRequest) (ProfileResponse, error)
 }
 
 func NewService(repo Repository, tw twitter.Service, log logger.Logger) Service {
@@ -80,7 +80,7 @@ func (s service) ListProfile(ctx context.Context) ([]ProfileResponse, error) {
 	return list, nil
 }
 
-func (s service) GetTweetList(ctx context.Context, userID, quantity int) ([]TweetResponse, error) {
+func (s service) GetTweetList(ctx context.Context, userID string, quantity int) ([]TweetResponse, error) {
 	log := s.log.WithCorrelation(ctx)
 	user, err := s.repository.GetProfileByID(ctx, userID)
 	if err != nil {
@@ -99,7 +99,7 @@ func (s service) GetTweetList(ctx context.Context, userID, quantity int) ([]Twee
 	return res, nil
 }
 
-func (s service) UpdateProfile(ctx context.Context, userID int, pr ProfileRequest) (ProfileResponse, error) {
+func (s service) UpdateProfile(ctx context.Context, userID string, pr ProfileRequest) (ProfileResponse, error) {
 	log := s.log.WithCorrelation(ctx)
 	op, err := s.repository.GetProfileByID(ctx, userID)
 	if err != nil {

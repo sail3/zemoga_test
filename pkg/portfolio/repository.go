@@ -2,106 +2,100 @@ package portfolio
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
+	"time"
 
 	"github.com/sail3/zemoga_test/internal/logger"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Repository interface {
-	GetProfileByID(ctx context.Context, ID int) (Profile, error)
+	GetProfileByID(ctx context.Context, ID string) (Profile, error)
 	GetAllProfile(ctx context.Context) ([]Profile, error)
-	UpdateProfile(ctx context.Context, ID int, p Profile) error
+	UpdateProfile(ctx context.Context, ID string, p Profile) error
 }
 
-func NewRepository(db *sql.DB, log logger.Logger) Repository {
+func NewRepository(cl *mongo.Client, DBName string, log logger.Logger) Repository {
 	return &repository{
-		db:  db,
-		log: log,
+		client:   cl,
+		database: cl.Database(DBName),
+		log:      log,
 	}
 }
 
 type repository struct {
-	db  *sql.DB
-	log logger.Logger
+	client   *mongo.Client
+	database *mongo.Database
+	log      logger.Logger
 }
 
-func (r *repository) GetProfileByID(ctx context.Context, ID int) (Profile, error) {
-	q := `SELECT id, name, title, image, twitter_username, twitter_id, description FROM profile WHERE id = $1`
+func (r *repository) GetProfileByID(ctx context.Context, ID string) (Profile, error) {
+	coll := r.database.Collection("profile")
 	log := r.log.WithCorrelation(ctx)
-
-	ctx, cancel := context.WithTimeout(ctx, 200000)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-
-	resp := r.db.QueryRow(q, ID)
-
-	var p Profile
-	err := resp.Scan(
-		&p.ID, &p.Name, &p.Title, &p.Image, &p.TwitterUser, &p.TwitterID, &p.Description,
-	)
+	objectID, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
 		log.Error(err)
 		return Profile{}, err
+	}
+	filter := bson.M{"_id": objectID}
+	var p Profile
+	err = coll.FindOne(ctx, filter).Decode(&p)
+	if err != nil {
+		log.Error(err)
+		return Profile{}, nil
 	}
 
 	return p, nil
 }
 
 func (r *repository) GetAllProfile(ctx context.Context) ([]Profile, error) {
-	q := "SELECT id, name, title, image, twitter_username, twitter_id, description FROM profile"
+	coll := r.database.Collection("profile")
 	log := r.log.WithCorrelation(ctx)
-	profiles := make([]Profile, 0)
-	rows, err := r.db.QueryContext(ctx, q)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	cursor, err := coll.Find(ctx, bson.D{{}})
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return nil, nil
 	}
-	for rows.Next() {
+	var res = make([]Profile, 0)
+	for cursor.Next(ctx) {
 		var p Profile
-		err := rows.Scan(
-			&p.ID, &p.Name, &p.Title, &p.Image, &p.TwitterUser, &p.TwitterID, &p.Description,
-		)
+		err := cursor.Decode(&p)
 		if err != nil {
-			log.Error(err)
-			continue
+			return nil, nil
 		}
-		profiles = append(profiles, p)
+		res = append(res, p)
 	}
-	return profiles, nil
+	return res, nil
 }
 
-func (r *repository) UpdateProfile(ctx context.Context, ID int, p Profile) error {
-	q := "UPDATE profile SET name= $1, title= $2 , image= $3, twitter_username= $4, twitter_id= $5, description= $6 WHERE id = $7"
+func (r *repository) UpdateProfile(ctx context.Context, ID string, p Profile) error {
+	coll := r.database.Collection("profile")
 	log := r.log.WithCorrelation(ctx)
-	st, err := r.db.PrepareContext(ctx, q)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	objectID, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	defer st.Close()
-
-	result, err := st.ExecContext(ctx,
-		p.Name,
-		p.Title,
-		p.Image,
-		p.TwitterUser,
-		p.TwitterID,
-		p.Description,
-		p.ID,
-	)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	ra, err := result.RowsAffected()
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	if ra < 1 {
-		err = fmt.Errorf("psql: expected 1 row affected, got %d", ra)
-		log.Error(err)
-		return err
+	filter := bson.M{"_id": objectID}
+	u := bson.D{primitive.E{Key: "$set", Value: bson.M{
+		"name":         p.Name,
+		"title":        p.Title,
+		"image":        p.Image,
+		"twitter_user": p.TwitterUser,
+		"twitter_id":   p.TwitterID,
+		"description":  p.Description,
+	}}}
+	resp := coll.FindOneAndUpdate(ctx, filter, u)
+	if resp.Err() != nil {
+		log.Error(resp.Err())
+		return resp.Err()
 	}
 	return nil
 }

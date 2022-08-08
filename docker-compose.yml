@@ -17,7 +17,7 @@ services:
         command: gowatch -p ./cmd/api
         depends_on:
             - swagger
-            - db
+            - mongo
         networks: 
             - default
     swagger:
@@ -26,15 +26,14 @@ services:
             URL: /swagger/swagger.yml
         volumes:
             - swagger:/usr/share/nginx/html
-    db:
-        image: postgres:13.5-alpine
+    mongo:
+        image: mongo
         restart: always
         ports:
-            - 15432:5432
+          - 27017:27017
         environment:
-            POSTGRES_PASSWORD: 'zemoga_test'
-            POSTGRES_USER: 'zemoga_test'
-            POSTGRES_DB: 'zemoga_test_db'
+            MONGO_INITDB_ROOT_USERNAME: zemoga_test
+            MONGO_INITDB_ROOT_PASSWORD: zemoga_test
 
 volumes:
     # swagger named volume will be shared between service and swagger. So we can have a local swagger running

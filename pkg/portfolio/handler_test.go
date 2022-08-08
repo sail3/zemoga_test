@@ -82,9 +82,9 @@ func (_ baseServiceMock) GetProfile(ctx context.Context, p GetProfileRequest) (G
 func (_ baseServiceMock) ListProfile(ctx context.Context) ([]ProfileResponse, error) {
 	panic("implement me")
 }
-func (_ baseServiceMock) GetTweetList(ctx context.Context, userID, quantity int) ([]TweetResponse, error) {
+func (_ baseServiceMock) GetTweetList(ctx context.Context, userID string, quantity int) ([]TweetResponse, error) {
 	panic("implement me")
 }
-func (_ baseServiceMock) UpdateProfile(ctx context.Context, userID int, pr ProfileRequest) (ProfileResponse, error) {
+func (_ baseServiceMock) UpdateProfile(ctx context.Context, userID string, pr ProfileRequest) (ProfileResponse, error) {
 	panic("implement me")
 }

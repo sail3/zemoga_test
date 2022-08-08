@@ -11,15 +11,14 @@ var serviceVersion = "local"
 const (
 	port            = "HTTP_PORT"
 	debugMode       = "DEBUG"
-	postgresHost    = "POSTGRES_HOST"
-	postgresPort    = "POSTGRES_PORT"
-	postgresUser    = "POSTGRES_USER"
-	postgresPass    = "POSTGRES_PASSWORD"
-	postgresDB      = "POSTGRES_DATABASE"
-	postgresTimeOUT = "POSTGRES_TIMEOUT"
 	twitterID       = "TWITTER_ID"
 	twitterSecret   = "TWITTER_SECRET"
 	twitterTokenURL = "TWITTER_TOKEN_URL"
+	mongoHost       = "MONGO_HOST"
+	mongoPort       = "MONGO_PORT"
+	mongoUser       = "MONGO_USER"
+	mongoPass       = "MONGO_PASS"
+	mongoDB         = "MONGO_DATABASE"
 )
 
 // Config contains the service configuration variables.
@@ -27,8 +26,8 @@ type Config struct {
 	Port            string
 	GRPCPort        string
 	Debug           bool
-	DbPostgresUrl   string
-	DbTimeOUT       int
+	DbMongoUrl      string
+	DbMongoDatabase string
 	TwitterID       string
 	TwitterSecret   string
 	TwitterTokenURL string
@@ -36,22 +35,21 @@ type Config struct {
 
 // New returns a structure with the service configuration variables.
 func New() Config {
-	postgresURL := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		os.Getenv(postgresUser),
-		os.Getenv(postgresPass),
-		os.Getenv(postgresHost),
-		os.Getenv(postgresPort),
-		os.Getenv(postgresDB))
-
+	mongoURL := fmt.Sprintf(
+		"mongodb://%s:%s@%s:%s",
+		os.Getenv(mongoUser),
+		os.Getenv(mongoPass),
+		os.Getenv(mongoHost),
+		os.Getenv(mongoPort),
+	)
 	return Config{
 		Port:            GetEnvString(port, "8080"),
 		Debug:           GetEnvBool(debugMode, false),
-		DbPostgresUrl:   postgresURL,
-		DbTimeOUT:       GetEnvInt(postgresTimeOUT, 15),
 		TwitterID:       GetEnvString(twitterID, ""),
 		TwitterSecret:   GetEnvString(twitterSecret, ""),
 		TwitterTokenURL: GetEnvString(twitterTokenURL, ""),
+		DbMongoUrl:      mongoURL,
+		DbMongoDatabase: GetEnvString(mongoDB, ""),
 	}
 }
 

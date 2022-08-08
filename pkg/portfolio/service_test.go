@@ -16,7 +16,7 @@ type getProfileMock struct {
 	err  error
 }
 
-func (m getProfileMock) GetProfileByID(ctx context.Context, ID int) (Profile, error) {
+func (m getProfileMock) GetProfileByID(ctx context.Context, ID string) (Profile, error) {
 	return m.resp, m.err
 }
 
@@ -32,7 +32,7 @@ func (m getUserTimeLineMock) GetUserTimeLine(userID int64, size int) ([]twitter.
 
 func TestService_GetProfile(t *testing.T) {
 	req := GetProfileRequest{
-		ID: 1,
+		ID: "62f17a504756615790132def",
 	}
 	twTimeline := make([]twitter.Tweet, 0)
 	resp := GetProfileResponse{}
@@ -198,7 +198,7 @@ type getTweetListMock struct {
 	err  error
 }
 
-func (m getTweetListMock) GetProfileByID(ctx context.Context, ID int) (Profile, error) {
+func (m getTweetListMock) GetProfileByID(ctx context.Context, ID string) (Profile, error) {
 	return m.resp, m.err
 }
 
@@ -273,7 +273,7 @@ func TestService_GetTweetList(t *testing.T) {
 			}
 			s := NewService(rm, tm, l)
 			ctx := context.Background()
-			resp, err := s.GetTweetList(ctx, 12, 12)
+			resp, err := s.GetTweetList(ctx, "12", 12)
 			assert.Equal(t, test.resp, resp)
 			assert.Equal(t, test.err, err)
 		})
@@ -287,11 +287,11 @@ type updateProfileRepoMock struct {
 	updateErr  error
 }
 
-func (m updateProfileRepoMock) GetProfileByID(ctx context.Context, ID int) (Profile, error) {
+func (m updateProfileRepoMock) GetProfileByID(ctx context.Context, ID string) (Profile, error) {
 	return m.profileRes, m.profileErr
 }
 
-func (m updateProfileRepoMock) UpdateProfile(ctx context.Context, ID int, p Profile) error {
+func (m updateProfileRepoMock) UpdateProfile(ctx context.Context, ID string, p Profile) error {
 	return m.updateErr
 }
 
@@ -411,7 +411,7 @@ func TestService_UpdateProfile(t *testing.T) {
 			}
 			s := NewService(rm, tm, l)
 			ctx := context.Background()
-			res, err := s.UpdateProfile(ctx, 12, test.req)
+			res, err := s.UpdateProfile(ctx, "12", test.req)
 			assert.Equal(t, test.res, res)
 			assert.Equal(t, test.err, err)
 		})
@@ -421,14 +421,14 @@ func TestService_UpdateProfile(t *testing.T) {
 
 type baseRepoMock struct{}
 
-func (_ baseRepoMock) GetProfileByID(ctx context.Context, ID int) (Profile, error) {
+func (_ baseRepoMock) GetProfileByID(ctx context.Context, ID string) (Profile, error) {
 	panic("implementme")
 }
 
 func (_ baseRepoMock) GetAllProfile(ctx context.Context) ([]Profile, error) {
 	panic("implementme")
 }
-func (_ baseRepoMock) UpdateProfile(ctx context.Context, ID int, p Profile) error {
+func (_ baseRepoMock) UpdateProfile(ctx context.Context, ID string, p Profile) error {
 	panic("implementme")
 }
 
