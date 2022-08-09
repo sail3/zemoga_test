@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/google/uuid"
 	"github.com/sail3/zemoga_test/internal/logger"
+	"github.com/sail3/zemoga_test/pkg/analytics"
 	"github.com/sail3/zemoga_test/pkg/health"
 	"github.com/sail3/zemoga_test/pkg/portfolio"
 )
@@ -15,7 +16,7 @@ import (
 const correlationIDHeader = "X-Correlation-ID"
 
 // NewHTTPRouter initializes the router using the services as dependencies to build the handlers.
-func NewHTTPRouter(healthSvc health.Service, portfolioSvc portfolio.Handler, log logger.Logger) http.Handler {
+func NewHTTPRouter(healthSvc health.Service, portfolioSvc portfolio.Handler, aHand analytics.Handler, ac chan map[string]string, log logger.Logger) http.Handler {
 	hh := health.Handler{
 		Service: healthSvc,
 	}
@@ -24,6 +25,7 @@ func NewHTTPRouter(healthSvc health.Service, portfolioSvc portfolio.Handler, log
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(correlationIDMiddleware)
+	r.Use(analyticsMiddleware(ac))
 
 	// Health.
 	r.Get("/health", hh.Health)
@@ -32,6 +34,9 @@ func NewHTTPRouter(healthSvc health.Service, portfolioSvc portfolio.Handler, log
 	r.Get("/profile", portfolioSvc.ListProfileHandler)
 	r.Get("/profile/{id}/tweet", portfolioSvc.ListTweetsHandler)
 	r.Patch("/profile/{id}", portfolioSvc.UpdateProfileHandler)
+
+	r.Get("/analytics/resume", aHand.AnalyticsResumeHandler)
+
 	r.Handle("/swagger/*", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./swagger"))))
 
 	return r
@@ -55,4 +60,16 @@ func correlationIDMiddleware(next http.Handler) http.Handler {
 		w.Header().Set(correlationIDHeader, id)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func analyticsMiddleware(ch chan map[string]string) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			msg := make(map[string]string)
+			msg["url"] = r.URL.String()
+			msg["method"] = r.Method
+			ch <- msg
+			next.ServeHTTP(w, r)
+		})
+	}
 }

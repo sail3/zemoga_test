@@ -11,6 +11,7 @@ import (
 	"github.com/sail3/zemoga_test/internal/config"
 	"github.com/sail3/zemoga_test/internal/db/mongo"
 	"github.com/sail3/zemoga_test/internal/transport"
+	"github.com/sail3/zemoga_test/pkg/analytics"
 	"github.com/sail3/zemoga_test/pkg/health"
 	"github.com/sail3/zemoga_test/pkg/portfolio"
 	"github.com/sail3/zemoga_test/pkg/twitter"
@@ -37,8 +38,14 @@ func main() {
 	pSvc := portfolio.NewService(pRepo, tSvc, l)
 
 	pHand := portfolio.NewHandler(pSvc, l)
+	analyticsChannel := make(chan map[string]string)
 
-	httpTransportRouter := transport.NewHTTPRouter(hSvc, pHand, l)
+	aRepo := analytics.NewRepository(mdb.Client, conf.DbMongoDatabase, l)
+	aSvc := analytics.NewService(aRepo, l)
+	aHand := analytics.NewHandler(aSvc, l)
+	aHand.InitWatcher(analyticsChannel, l)
+
+	httpTransportRouter := transport.NewHTTPRouter(hSvc, pHand, aHand, analyticsChannel, l)
 
 	srv := &http.Server{
 		Addr: fmt.Sprintf("0.0.0.0:%s", conf.Port),
